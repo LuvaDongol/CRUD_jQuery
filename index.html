@@ -10,6 +10,60 @@
     <div class="container">
       <h1>Task Manager</h1>
 
+      <!-- Create / Edit Form -->
+      <div class="form-card">
+        <h2 id="form-title">Add New Task</h2>
+        <form id="task-form">
+          <input type="hidden" id="task-id" />
+          <div class="form-group">
+            <label for="task-name">Task Name</label>
+            <input
+              type="text"
+              id="task-name"
+              placeholder="Enter task name"
+              required
+            />
+          </div>
+          <div class="form-group">
+            <label for="task-desc">Description</label>
+            <textarea
+              id="task-desc"
+              rows="3"
+              placeholder="Enter description"
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label for="task-priority">Priority</label>
+            <select id="task-priority">
+              <option value="Low">Low</option>
+              <option value="Medium" selected>Medium</option>
+              <option value="High">High</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="task-status">Status</label>
+            <select id="task-status">
+              <option value="Pending">Pending</option>
+              <option value="In Progress">In Progress</option>
+              <option value="Completed">Completed</option>
+            </select>
+          </div>
+          <div class="form-actions">
+            <button type="submit" id="btn-submit" class="btn btn-primary">
+              Add Task
+            </button>
+            <button
+              type="button"
+              id="btn-cancel"
+              class="btn btn-secondary"
+              style="display: none"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+
       <!-- Task List -->
       <div id="task-list">
         <p class="empty-msg">No tasks yet. Add one above!</p>
