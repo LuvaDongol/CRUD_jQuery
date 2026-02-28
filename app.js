@@ -40,12 +40,50 @@ $(function () {
     var $list = $("#task-list");
     $list.empty();
 
-    if (tasks.length === 0) {
-      $list.html('<p class="empty-msg">No tasks yet. Add one above!</p>');
+    // Apply filters
+    var searchTerm = $("#search-input").val().toLowerCase();
+    var statusFilter = $("#status-filter").val();
+    var priorityFilter = $("#priority-filter").val();
+    var sortBy = $("#sort-by").val();
+
+    // Filter tasks
+    var filteredTasks = tasks.filter(function (task) {
+      var matchesSearch =
+        !searchTerm ||
+        task.name.toLowerCase().includes(searchTerm) ||
+        task.desc.toLowerCase().includes(searchTerm);
+      var matchesStatus = !statusFilter || task.status === statusFilter;
+      var matchesPriority = !priorityFilter || task.priority === priorityFilter;
+
+      return matchesSearch && matchesStatus && matchesPriority;
+    });
+
+    // Sort tasks
+    filteredTasks.sort(function (a, b) {
+      switch (sortBy) {
+        case "oldest":
+          return a.id.localeCompare(b.id);
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "priority":
+          var priorityOrder = { High: 3, Medium: 2, Low: 1 };
+          return priorityOrder[b.priority] - priorityOrder[a.priority];
+        case "newest":
+        default:
+          return b.id.localeCompare(a.id);
+      }
+    });
+
+    if (filteredTasks.length === 0) {
+      var message =
+        searchTerm || statusFilter || priorityFilter
+          ? '<p class="empty-msg">No tasks match your filters.</p>'
+          : '<p class="empty-msg">No tasks yet. Add one above!</p>';
+      $list.html(message);
       return;
     }
 
-    $.each(tasks, function (_i, t) {
+    $.each(filteredTasks, function (_i, t) {
       var card =
         '<div class="task-card" data-id="' +
         t.id +
@@ -61,6 +99,11 @@ $(function () {
         "</div>" +
         "</div>" +
         '<div class="task-actions">' +
+        '<button class="btn btn-toggle-status" data-id="' +
+        t.id +
+        '" title="Toggle Status">' +
+        getNextStatus(t.status) +
+        "</button>" +
         '<button class="btn btn-edit" data-id="' +
         t.id +
         '">Edit</button>' +
@@ -71,6 +114,36 @@ $(function () {
         "</div>";
       $list.append(card);
     });
+
+    updateStats(filteredTasks);
+  }
+
+  // ── Helper function to get next status ──
+  function getNextStatus(currentStatus) {
+    switch (currentStatus) {
+      case "Pending":
+        return "▶️";
+      case "In Progress":
+        return "✅";
+      case "Completed":
+        return "🔄";
+      default:
+        return "▶️";
+    }
+  }
+
+  // ── Update stats dashboard ──
+  function updateStats(tasks) {
+    var allTasks = getTasks();
+    var total = allTasks.length;
+    var pending = allTasks.filter((t) => t.status === "Pending").length;
+    var inProgress = allTasks.filter((t) => t.status === "In Progress").length;
+    var completed = allTasks.filter((t) => t.status === "Completed").length;
+
+    $("#total-tasks").text(total);
+    $("#pending-tasks").text(pending);
+    $("#inprogress-tasks").text(inProgress);
+    $("#completed-tasks").text(completed);
   }
 
   // ── CREATE/UPDATE – Add or update task ──
@@ -179,6 +252,15 @@ $(function () {
     $("#btn-submit").text("Add Task");
     $("#btn-cancel").hide();
   }
+
+  // ── Search and Filter Event Listeners ──
+  $("#search-input").on("input", function () {
+    renderTasks();
+  });
+
+  $("#status-filter, #priority-filter, #sort-by").on("change", function () {
+    renderTasks();
+  });
 
   // ── Initial render ──
   renderTasks();
