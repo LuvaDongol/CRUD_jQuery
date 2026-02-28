@@ -47,21 +47,33 @@ $(function () {
 
     $.each(tasks, function (_i, t) {
       var card =
-        '<div class="task-card" data-id="' + t.id + '">' +
-          '<div class="task-info">' +
-            "<h3>" + escapeHtml(t.name) + "</h3>" +
-            (t.desc ? "<p>" + escapeHtml(t.desc) + "</p>" : "") +
-            '<div class="task-meta">' +
-              priorityBadge(t.priority) +
-              statusBadge(t.status) +
-            "</div>" +
-          "</div>" +
+        '<div class="task-card" data-id="' +
+        t.id +
+        '">' +
+        '<div class="task-info">' +
+        "<h3>" +
+        escapeHtml(t.name) +
+        "</h3>" +
+        (t.desc ? "<p>" + escapeHtml(t.desc) + "</p>" : "") +
+        '<div class="task-meta">' +
+        priorityBadge(t.priority) +
+        statusBadge(t.status) +
+        "</div>" +
+        "</div>" +
+        '<div class="task-actions">' +
+        '<button class="btn btn-edit" data-id="' +
+        t.id +
+        '">Edit</button>' +
+        '<button class="btn btn-delete" data-id="' +
+        t.id +
+        '">Delete</button>' +
+        "</div>" +
         "</div>";
       $list.append(card);
     });
   }
 
-  // ── CREATE – Add new task ──
+  // ── CREATE/UPDATE – Add or update task ──
   $("#task-form").on("submit", function (e) {
     e.preventDefault();
 
@@ -69,23 +81,104 @@ $(function () {
     var desc = $.trim($("#task-desc").val());
     var priority = $("#task-priority").val();
     var status = $("#task-status").val();
+    var taskId = $("#task-id").val();
 
     if (!name) return;
 
     var tasks = getTasks();
 
-    tasks.unshift({
-      id: generateId(),
-      name: name,
-      desc: desc,
-      priority: priority,
-      status: status,
-    });
+    if (taskId) {
+      // UPDATE existing task
+      var taskIndex = tasks.findIndex(function (t) {
+        return t.id === taskId;
+      });
+      if (taskIndex !== -1) {
+        tasks[taskIndex] = {
+          id: taskId,
+          name: name,
+          desc: desc,
+          priority: priority,
+          status: status,
+        };
+      }
+    } else {
+      // CREATE new task
+      tasks.unshift({
+        id: generateId(),
+        name: name,
+        desc: desc,
+        priority: priority,
+        status: status,
+      });
+    }
 
     saveTasks(tasks);
-    $("#task-form")[0].reset();
+    resetForm();
     renderTasks();
   });
+
+  // ── EDIT functionality ──
+  $(document).on("click", ".btn-edit", function () {
+    var taskId = $(this).data("id");
+    var tasks = getTasks();
+    var task = tasks.find(function (t) {
+      return t.id === taskId;
+    });
+
+    if (task) {
+      $("#task-id").val(task.id);
+      $("#task-name").val(task.name);
+      $("#task-desc").val(task.desc);
+      $("#task-priority").val(task.priority);
+      $("#task-status").val(task.status);
+
+      $("#form-title").text("Edit Task");
+      $("#btn-submit").text("Update Task");
+      $("#btn-cancel").show();
+
+      // Scroll to form
+      $("html, body").animate(
+        {
+          scrollTop: $(".form-card").offset().top - 20,
+        },
+        300
+      );
+    }
+  });
+
+  // ── Cancel edit functionality ──
+  $("#btn-cancel").on("click", function () {
+    resetForm();
+  });
+
+  // ── DELETE functionality ──
+  $(document).on("click", ".btn-delete", function () {
+    var taskId = $(this).data("id");
+    var tasks = getTasks();
+    var task = tasks.find(function (t) {
+      return t.id === taskId;
+    });
+
+    if (
+      task &&
+      confirm('Are you sure you want to delete "' + task.name + '"?')
+    ) {
+      var updatedTasks = tasks.filter(function (t) {
+        return t.id !== taskId;
+      });
+      saveTasks(updatedTasks);
+      renderTasks();
+    }
+  });
+
+  // ── Reset form helper ──
+  function resetForm() {
+    $("#task-form")[0].reset();
+    $("#task-id").val("");
+    $("#form-title").text("Add New Task");
+    $("#btn-submit").text("Add Task");
+    $("#btn-cancel").hide();
+  }
 
   // ── Initial render ──
   renderTasks();
