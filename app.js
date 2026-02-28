@@ -145,6 +145,21 @@ $(function () {
     $("#inprogress-tasks").text(inProgress);
     $("#completed-tasks").text(completed);
   }
+  // ── Show notification ──
+  function showNotification(message, type = "info") {
+    var $notification = $("#notification");
+    $notification
+      .removeClass("hidden success error info")
+      .addClass(type)
+      .text(message)
+      .fadeIn(300);
+
+    setTimeout(function () {
+      $notification.fadeOut(300, function () {
+        $notification.addClass("hidden");
+      });
+    }, 3000);
+  }
 
   // ── CREATE/UPDATE – Add or update task ──
   $("#task-form").on("submit", function (e) {
@@ -188,6 +203,13 @@ $(function () {
     saveTasks(tasks);
     resetForm();
     renderTasks();
+
+    // Show notification
+    if (taskId) {
+      showNotification("Task updated successfully! ✅", "success");
+    } else {
+      showNotification("New task added! 🎉", "success");
+    }
   });
 
   // ── EDIT functionality ──
@@ -241,6 +263,40 @@ $(function () {
       });
       saveTasks(updatedTasks);
       renderTasks();
+      showNotification("Task deleted successfully! 🗑️", "success");
+    }
+  });
+
+  // ── Quick Status Toggle functionality ──
+  $(document).on("click", ".btn-toggle-status", function () {
+    var taskId = $(this).data("id");
+    var tasks = getTasks();
+    var taskIndex = tasks.findIndex(function (t) {
+      return t.id === taskId;
+    });
+
+    if (taskIndex !== -1) {
+      var currentStatus = tasks[taskIndex].status;
+      var nextStatus;
+
+      switch (currentStatus) {
+        case "Pending":
+          nextStatus = "In Progress";
+          break;
+        case "In Progress":
+          nextStatus = "Completed";
+          break;
+        case "Completed":
+          nextStatus = "Pending";
+          break;
+        default:
+          nextStatus = "Pending";
+      }
+
+      tasks[taskIndex].status = nextStatus;
+      saveTasks(tasks);
+      renderTasks();
+      showNotification("Status changed to " + nextStatus + "! 🔄", "success");
     }
   });
 
